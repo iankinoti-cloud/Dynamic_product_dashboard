@@ -1,0 +1,77 @@
+.card {
+  background-color: #fdf6ec;
+  border: 1.5px solid #d9c9b0;
+  border-radius: 10px;
+  padding: 1.25rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 2px 6px rgba(140, 110, 70, 0.1);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(140, 110, 70, 0.18);
+}
+
+.card h3 {
+  font-size: 1.1rem;
+  color: #5c4a32;
+  margin: 0;
+}
+
+.card p {
+  font-size: 0.95rem;
+  color: #7a6350;
+  margin: 0;
+}
+
+.removeBtn {
+  margin-top: auto;
+  padding: 0.35rem 0.9rem;
+  border: 1.5px solid #c8a97e;
+  border-radius: 16px;
+  background-color: transparent;
+  color: #9b6b3a;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.removeBtn:hover {
+  background-color: #c8a97e;
+  color: #fff;
+}
+
+.outOfStockClass {
+  background-color: #ede4d3;
+  border-color: #c4b49a;
+  opacity: 0.82;
+}
+
+.outOfStockClass h3 {
+  color: #9b8878;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.inStockBadge {
+  background-color: #d4edda;
+  color: #2d6a4f;
+}
+
+.outOfStockBadge {
+  background-color: #f5dbd0;
+  color: #9b4b2e;
+}

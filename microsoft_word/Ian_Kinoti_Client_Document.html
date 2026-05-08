@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ian Kinoti — Client Document</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Pinyon+Script&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design tokens (exact from blog) ── */
+    :root {
+      --cream:       #F7F1E8;
+      --parchment:   #EDE3D3;
+      --tan:         #C9A87C;
+      --tan-light:   #E4D3BB;
+      --brown-muted: #9C7A5B;
+      --brown:       #6B4226;
+      --brown-dark:  #3D2010;
+      --text:        #2E1B0E;
+      --text-muted:  #7A5C44;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Geist', Georgia, serif;
+      background: var(--parchment);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    /* ── Toolbar (camouflage scroll) ── */
+    .toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: transparent;
+      color: var(--cream);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 28px;
+      z-index: 1000;
+      border-bottom: 1px solid transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      transition: background 0.5s cubic-bezier(0.4,0,0.2,1),
+                  border-color 0.5s cubic-bezier(0.4,0,0.2,1),
+                  backdrop-filter 0.5s cubic-bezier(0.4,0,0.2,1),
+                  box-shadow 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .toolbar.scrolled {
+      background: var(--parchment);
+      border-bottom: 1px solid var(--tan-light);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 2px 16px rgba(61,32,16,0.12);
+    }
+    .toolbar .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .toolbar .brand .nav-letter {
+      display: inline-block;
+      font-size: clamp(1.1rem, 4.5vw, 1.875rem);
+      font-weight: 700;
+      color: rgb(242,237,228);
+      text-shadow:
+        1px 1px rgb(200,184,154),
+        2px 2px rgb(184,168,138),
+        3px 3px rgb(168,152,122),
+        4px 4px rgba(0,0,0,0.35);
+      transition: text-shadow 0.15s ease-out, color 0.15s ease-out, transform 0.15s ease-out;
+      cursor: default;
+      user-select: none;
+      will-change: transform;
+      animation: floatLetter 3.2s ease-in-out infinite;
+    }
+    .toolbar .brand .nav-letter:hover {
+      animation-play-state: paused;
+      color: rgb(255,255,255);
+      text-shadow:
+        rgba(242,237,228,0.95) 0 0 8px,
+        rgba(200,184,154,0.75) 0 0 20px,
+        rgba(200,184,154,0.35) 0 0 40px;
+      transform: translateY(-10px) scale(1.4);
+    }
+    .toolbar .brand .nav-sep {
+      font-size: clamp(0.65rem, 2vw, 0.85rem);
+      color: var(--tan);
+      letter-spacing: 0.12em;
+      margin: 0 0.4em;
+      font-weight: 400;
+      user-select: none;
+      align-self: center;
+      transition: color 0.5s;
+    }
+    /* scrolled: flatten 3D shadow on nav letters, darken colour */
+    .toolbar.scrolled .brand .nav-letter {
+      color: var(--brown-dark);
+      text-shadow: none;
+    }
+    .toolbar.scrolled .brand .nav-letter:hover {
+      color: var(--brown);
+      text-shadow:
+        rgba(61,32,16,0.4) 0 0 8px,
+        rgba(61,32,16,0.2) 0 0 20px;
+      transform: translateY(-8px) scale(1.35);
+    }
+    .toolbar.scrolled .brand .nav-sep { color: var(--brown-muted); }
+    .toolbar .actions { display: flex; gap: 10px; align-items: center; }
+
+    /* ── iOS-glass base ── */
+    .btn {
+      padding: 7px 18px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      font-family: 'Geist', Georgia, serif;
+      /* glass physics */
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      transition:
+        background     0.18s ease-out,
+        border-color   0.18s ease-out,
+        box-shadow     0.18s ease-out,
+        transform      0.18s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+    /* subtle inner sheen — the glass ridge */
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: linear-gradient(
+        160deg,
+        rgba(255,255,255,0.22) 0%,
+        rgba(255,255,255,0.04) 45%,
+        transparent 100%
+      );
+      pointer-events: none;
+    }
+
+    /* ── Clear All — dark frost glass ── */
+    .btn-clear {
+      background: rgba(20,8,2,0.52);
+      color: rgba(242,237,228,0.96);
+      border: 1px solid rgba(255,255,255,0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.30),
+        0 2px 14px rgba(0,0,0,0.32);
+    }
+    .btn-clear:hover {
+      background: rgba(20,8,2,0.68);
+      border-color: rgba(255,255,255,0.50);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        0 6px 28px rgba(0,0,0,0.40);
+      transform: translateY(-2px);
+      color: #fff;
+    }
+    .btn-clear:active {
+      background: rgba(20,8,2,0.38);
+      transform: scale(0.97) translateY(1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        0 1px 6px rgba(0,0,0,0.20);
+      transition: background 0.07s, transform 0.07s;
+    }
+
+    /* scrolled — parchment behind glass, shift tint warm */
+    .toolbar.scrolled .btn-clear {
+      background: rgba(201,168,124,0.12);
+      color: var(--brown);
+      border-color: rgba(201,168,124,0.35);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.30),
+        0 2px 12px rgba(61,32,16,0.12);
+    }
+    .toolbar.scrolled .btn-clear:hover {
+      background: rgba(201,168,124,0.22);
+      border-color: rgba(201,168,124,0.55);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        0 6px 24px rgba(61,32,16,0.18);
+      color: var(--brown-dark);
+      transform: translateY(-2px);
+    }
+
+    /* ── Print / Save — amber resin glass ── */
+    .btn-print {
+      background: rgba(160,110,55,0.72);
+      color: rgba(242,237,228,0.98);
+      border: 1px solid rgba(228,211,187,0.60);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.40),
+        0 2px 14px rgba(61,32,16,0.32);
+    }
+    .btn-print:hover {
+      background: rgba(160,110,55,0.88);
+      border-color: rgba(242,237,228,0.80);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        0 6px 28px rgba(61,32,16,0.42);
+      transform: translateY(-2px);
+      color: #fff;
+    }
+    .btn-print:active {
+      background: rgba(160,110,55,0.55);
+      transform: scale(0.97) translateY(1px);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.20),
+        0 1px 6px rgba(61,32,16,0.22);
+      transition: background 0.07s, transform 0.07s;
+    }
+
+    /* scrolled — amber gets richer against parchment */
+    .toolbar.scrolled .btn-print {
+      background: rgba(107,66,38,0.14);
+      color: var(--brown-dark);
+      border-color: rgba(107,66,38,0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.40),
+        0 2px 12px rgba(61,32,16,0.10);
+    }
+    .toolbar.scrolled .btn-print:hover {
+      background: rgba(107,66,38,0.24);
+      border-color: rgba(107,66,38,0.50);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        0 6px 24px rgba(61,32,16,0.18);
+      color: var(--brown-dark);
+      transform: translateY(-2px);
+    }
+
+    /* ── Page wrap ── */
+    .page-wrap {
+      max-width: 880px;
+      margin: 72px auto 60px;
+      background: var(--cream);
+      box-shadow: 0 8px 48px rgba(61,32,16,0.18);
+    }
+
+    /* ── Timestamp bar ── */
+    .ts-bar {
+      background: var(--parchment);
+      border-bottom: 1px solid var(--tan-light);
+      padding: 9px 40px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--brown-muted);
+    }
+    .ts-bar b { color: var(--brown); }
+
+    /* ── Mouse-trail bubbles ── */
+    @keyframes bubbleRise {
+      0%   { transform: translateY(0)   scale(1);    opacity: var(--bop); }
+      60%  { transform: translateY(-55px) scale(1.3); opacity: calc(var(--bop) * 0.5); }
+      100% { transform: translateY(-110px) scale(1.6); opacity: 0; }
+    }
+    .trail-bubble {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: bubbleRise var(--bdur, 1.1s) ease-out forwards;
+      z-index: 10;
+    }
+
+    /* ── 3D letter float animation ── */
+    @keyframes floatLetter {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-6px); }
+    }
+
+    /* ── Doc header ── */
+    .doc-header {
+      background: var(--brown-dark);
+      padding: 32px 40px 28px;
+      color: var(--cream);
+      position: relative;
+      overflow: visible;
+    }
+    .doc-header h1 {
+      display: flex;
+      align-items: baseline;
+      gap: 0;
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+    .doc-header h1 .letter {
+      display: inline-block;
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 900;
+      letter-spacing: 0.14em;
+      color: rgb(232, 212, 176);
+      text-shadow:
+        1px 1px 0 rgb(90,48,24),
+        2px 2px 0 rgb(78,41,18),
+        3px 3px 0 rgb(66,34,14),
+        4px 4px 0 rgb(55,28,10),
+        5px 5px 0 rgb(45,22,7),
+        6px 6px 0 rgb(36,17,4),
+        7px 7px 12px rgba(0,0,0,0.5);
+      animation: floatLetter 3.2s ease-in-out infinite;
+      will-change: transform;
+      cursor: default;
+      user-select: none;
+      transition: text-shadow 0.15s ease-out, color 0.15s ease-out, transform 0.15s ease-out;
+    }
+    .doc-header h1 .letter:hover {
+      animation-play-state: paused;
+      color: rgb(255, 255, 255);
+      text-shadow:
+        rgba(242,237,228,0.95) 0 0 10px,
+        rgba(200,184,154,0.75) 0 0 24px,
+        rgba(200,184,154,0.35) 0 0 48px;
+      transform: translateY(-18px) scale(1.45) !important;
+    }
+    .doc-header h1 .letter-space {
+      display: inline-block;
+      width: 0.6em;
+    }
+    .doc-header .subtitle {
+      font-size: 10px;
+      color: var(--tan);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-top: 6px;
+    }
+    .doc-header .contact {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--tan-light);
+    }
+    .doc-header .contact a { color: var(--tan); text-decoration: none; }
+    .doc-header .contact a:hover { text-decoration: underline; }
+
+    /* ── Doc body ── */
+    .doc-body { padding: 40px 40px 64px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 52px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--brown);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--tan);
+      margin-bottom: 24px;
+    }
+
+    /* ── Page break ── */
+    .page-break {
+      border: none;
+      border-top: 1px dashed var(--tan-light);
+      margin: 52px 0;
+    }
+
+    /* ── Text ── */
+    p { margin-bottom: 10px; }
+    .meta-line { color: var(--text-muted); font-size: 11px; margin-bottom: 3px; }
+
+    /* ────────────────────────────────────────────
+       FILL FIELDS
+    ──────────────────────────────────────────── */
+    .fill-field {
+      display: inline-block;
+      position: relative;
+      min-width: 100px;
+      border-bottom: 2px dashed #e53935;
+      background: rgba(229, 57, 53, 0.05);
+      padding: 1px 8px 2px;
+      cursor: pointer;
+      border-radius: 2px;
+      color: #c0392b;
+      font-style: italic;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .fill-field::before {
+      content: attr(data-label);
+      position: absolute;
+      bottom: calc(100% + 5px);
+      left: 0;
+      font-size: 9px;
+      font-style: normal;
+      font-weight: 700;
+      color: #e53935;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+      background: #fff0f0;
+      border: 1px solid #f5c6c6;
+      padding: 2px 6px;
+      border-radius: 3px;
+      z-index: 10;
+    }
+    .fill-field::after {
+      content: '✎ fill here';
+      font-size: 9px;
+      font-style: normal;
+      font-weight: 600;
+      color: #e53935;
+      margin-left: 6px;
+      letter-spacing: 0.3px;
+      opacity: 0.8;
+    }
+    .fill-field:hover { background: rgba(229, 57, 53, 0.1); }
+    .fill-field:hover::before { opacity: 1; }
+
+    /* Filled state */
+    .fill-field.filled {
+      border-bottom: 1.5px solid var(--brown);
+      background: transparent;
+      color: var(--text);
+      font-style: normal;
+      cursor: pointer;
+    }
+    .fill-field.filled::after { display: none; }
+    .fill-field.filled:hover { background: rgba(107,66,38,0.06); }
+    .fill-field.filled::before {
+      content: '✎ edit';
+      color: var(--brown-muted);
+      background: var(--parchment);
+      border-color: var(--tan-light);
+    }
+    .fill-field.filled:hover::before { opacity: 1; }
+
+    /* Inline input */
+    .fill-input {
+      display: inline-block;
+      border: none;
+      border-bottom: 2.5px solid var(--brown);
+      outline: none;
+      font-family: 'Geist', Georgia, serif;
+      font-size: inherit;
+      color: var(--text);
+      background: var(--parchment);
+      padding: 2px 8px;
+      border-radius: 3px 3px 0 0;
+      min-width: 160px;
+      box-shadow: 0 2px 8px rgba(107,66,38,0.1);
+    }
+
+    /* ── Invoice meta ── */
+    .inv-meta {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 20px;
+      background: var(--parchment);
+      border: 1px solid var(--tan-light);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      max-width: 440px;
+      font-size: 12px;
+    }
+    .inv-meta .key { color: var(--brown-muted); font-weight: 700; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; align-self: center; }
+    .inv-meta .val { color: var(--brown-dark); align-self: center; }
+
+    /* ── Billing parties ── */
+    .billing-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .billing-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      background: var(--parchment);
+      border: 1px solid var(--tan-light);
+    }
+    .billing-box .blabel {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--brown-muted);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .billing-box .bname { font-size: 14px; font-weight: 700; color: var(--brown-dark); }
+    .billing-box .bdetail { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+    .billing-box .bemail { font-size: 11px; color: var(--brown); margin-top: 3px; }
+
+    /* ── Line items table ── */
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .inv-table thead tr { background: var(--brown-dark); }
+    .inv-table thead th {
+      padding: 11px 14px;
+      text-align: left;
+      font-weight: 700;
+      color: var(--cream);
+      letter-spacing: 0.5px;
+      font-size: 11px;
+    }
+    .inv-table tbody tr:nth-child(even) { background: var(--parchment); }
+    .inv-table tbody tr:hover { background: var(--tan-light); }
+    .inv-table tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--tan-light);
+      vertical-align: middle;
+    }
+
+    /* ── Totals ── */
+    .totals {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      margin-top: 12px;
+      gap: 5px;
+    }
+    .total-row { display: flex; gap: 32px; font-size: 12px; }
+    .t-label { color: var(--text-muted); min-width: 240px; text-align: right; }
+    .t-val   { min-width: 110px; text-align: right; font-weight: 600; color: var(--brown-dark); }
+    .total-row.grand {
+      border-top: 2px solid var(--brown);
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+    .total-row.grand .t-label,
+    .total-row.grand .t-val { font-size: 13px; font-weight: 800; color: var(--brown-dark); }
+
+    /* ── Note box ── */
+    .note-box {
+      background: #fdf6e3;
+      border-left: 3px solid var(--tan);
+      padding: 11px 16px;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-radius: 0 6px 6px 0;
+      margin-top: 14px;
+    }
+
+    /* ── Clauses ── */
+    .clause { margin-bottom: 22px; }
+    .clause-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--brown);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    .clause p { font-size: 12px; color: var(--text); line-height: 1.8; }
+    .clause-liability {
+      background: #fff3f3;
+      border-left: 3px solid #e53935;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+    }
+    .clause-liability .clause-title { color: #c0392b; }
+
+    /* ── Signatures ── */
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+      margin-top: 28px;
+    }
+    .sig-box { border-top: 2.5px solid var(--brown); padding-top: 14px; }
+    .sig-name { font-size: 13px; font-weight: 700; color: var(--brown-dark); margin-bottom: 20px; }
+    .sig-line {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--tan-light);
+      padding-bottom: 20px;
+    }
+    .sig-line-label { font-size: 10px; color: var(--brown-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Footer ── */
+    .doc-footer {
+      background: var(--brown-dark);
+      color: var(--tan);
+      text-align: center;
+      font-size: 10px;
+      padding: 16px 40px;
+      letter-spacing: 0.5px;
+    }
+    .doc-footer a { color: var(--tan-light); text-decoration: none; }
+    .doc-footer a:hover { text-decoration: underline; }
+
+    /* ── Signature widget ── */
+    @keyframes sigReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fieldPulse {
+      0%,100% { box-shadow: none; background: transparent; }
+      40%     { box-shadow: 0 0 0 3px rgba(201,168,124,0.55); background: rgba(201,168,124,0.10); }
+    }
+    .sig-widget { margin: 8px 0 12px; }
+    .sig-unsigned {
+      background: var(--parchment);
+      border: 1px solid var(--tan-light);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .sig-prompt { font-size: 11px; color: var(--text-muted); margin-bottom: 10px; }
+    .sig-input {
+      width: 100%;
+      border: none;
+      border-bottom: 2px solid var(--tan);
+      background: transparent;
+      font-family: 'Geist', Georgia, serif;
+      font-size: 13px;
+      color: var(--text);
+      padding: 4px 2px;
+      outline: none;
+      margin-bottom: 10px;
+    }
+    .sig-input:focus { border-bottom-color: var(--brown); }
+    .sig-preview-wrap {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      padding: 4px 2px 8px;
+      border-bottom: 1px solid var(--tan-light);
+      margin-bottom: 12px;
+    }
+    .sig-preview {
+      font-family: 'Pinyon Script', cursive;
+      font-size: 36px;
+      color: var(--brown-dark);
+      line-height: 1.15;
+      letter-spacing: 0.02em;
+    }
+    .sig-preview:empty::after {
+      content: 'Your signature will appear here';
+      font-family: 'Geist', Georgia, serif;
+      font-size: 11px;
+      color: var(--tan);
+      font-style: normal;
+    }
+    .sig-accept-btn {
+      display: block;
+      width: 100%;
+      padding: 9px 16px;
+      background: var(--brown-dark);
+      color: var(--cream);
+      border: none;
+      border-radius: 8px;
+      font-family: 'Geist', Georgia, serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .sig-accept-btn:disabled { opacity: 0.32; cursor: default; }
+    .sig-accept-btn:not(:disabled):hover { background: var(--brown); }
+    .sig-locked-display {
+      animation: sigReveal 0.35s ease-out;
+      padding: 14px 16px 12px;
+      background: rgba(61,32,16,0.04);
+      border: 1px solid var(--tan);
+      border-radius: 10px;
+    }
+    .sig-cursive {
+      font-family: 'Pinyon Script', cursive;
+      font-size: 40px;
+      color: var(--brown-dark);
+      line-height: 1.2;
+      letter-spacing: 0.02em;
+    }
+    .sig-seal {
+      height: 1px;
+      background: linear-gradient(90deg, var(--tan) 0%, transparent 80%);
+      margin: 6px 0 8px;
+    }
+    .sig-meta { font-size: 10px; color: var(--text-muted); letter-spacing: 0.3px; }
+    .sig-clear-btn {
+      margin-top: 8px;
+      background: none;
+      border: none;
+      color: var(--brown-muted);
+      font-size: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 2px 0;
+      text-decoration: underline;
+      transition: color 0.12s;
+    }
+    .sig-clear-btn:hover { color: var(--brown); }
+    .field-highlight { animation: fieldPulse 1.5s ease-out forwards; border-radius: 3px; }
+
+    /* ── Validation Modal ── */
+    .val-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      background: rgba(30,12,4,0.62);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .val-overlay.open { display: flex; }
+    .val-modal {
+      background: var(--cream);
+      border: 1px solid var(--tan-light);
+      border-radius: 18px;
+      box-shadow:
+        0 32px 80px rgba(30,12,4,0.38),
+        inset 0 1px 0 rgba(255,255,255,0.60);
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 32px 32px 28px;
+    }
+    .val-modal-icon { font-size: 26px; margin-bottom: 10px; }
+    .val-modal-title { font-size: 17px; font-weight: 800; color: var(--brown-dark); margin-bottom: 4px; }
+    .val-modal-sub { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.65; }
+    .val-section-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--brown);
+      border-bottom: 1px solid var(--tan-light);
+      padding-bottom: 5px;
+      margin: 18px 0 8px;
+    }
+    .val-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text);
+      background: none;
+      border: 1px solid transparent;
+      width: 100%;
+      text-align: left;
+      font-family: inherit;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .val-item:hover { background: var(--parchment); border-color: var(--tan-light); }
+    .val-item-icon { font-size: 13px; flex-shrink: 0; }
+    .val-item-label { flex: 1; }
+    .val-item-arrow { color: var(--tan); font-size: 11px; }
+    .val-footer { margin-top: 24px; }
+    .val-dismiss {
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--brown-dark);
+      color: var(--cream);
+      border: none;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .val-dismiss:hover { background: var(--brown); }
+
+    /* ── Print-ready flash ── */
+    .print-flash {
+      position: fixed;
+      top: 68px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-6px);
+      background: var(--brown-dark);
+      color: var(--cream);
+      padding: 9px 22px;
+      border-radius: 100px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--tan);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.28);
+      opacity: 0;
+      transition: opacity 0.22s, transform 0.22s;
+      z-index: 9997;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .print-flash.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── Document Sealed Overlay ── */
+    #sealed-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20, 8, 2, 0.78);
+      backdrop-filter: blur(10px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #sealed-overlay.open { display: flex; }
+
+    .sealed-card {
+      background: var(--cream);
+      border-radius: 22px;
+      padding: 44px 40px 36px;
+      max-width: 480px;
+      max-height: 90vh;
+      overflow-y: auto;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 40px 100px rgba(20, 8, 2, 0.50), 0 0 0 1px rgba(201,168,124,0.3);
+      animation: sealCardIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes sealCardIn {
+      from { transform: translateY(36px) scale(0.96); opacity: 0; }
+      to   { transform: translateY(0)     scale(1);    opacity: 1; }
+    }
+
+    /* Wax seal */
+    .wax-seal {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 35%, #b84a2e 0%, #8b2915 55%, #5e1a0a 100%);
+      box-shadow:
+        0 0 0 6px rgba(139,41,21,0.18),
+        0 0 0 10px rgba(139,41,21,0.10),
+        0 8px 32px rgba(100,20,5,0.45),
+        inset 0 2px 6px rgba(255,255,255,0.18),
+        inset 0 -3px 8px rgba(0,0,0,0.30);
+      margin: 0 auto 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      animation: sealStamp 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+    }
+    @keyframes sealStamp {
+      0%   { transform: scale(0) rotate(-20deg); opacity: 0; }
+      65%  { transform: scale(1.14) rotate(4deg); opacity: 1; }
+      82%  { transform: scale(0.94) rotate(-2deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    .wax-seal::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.22);
+    }
+    .wax-seal-text {
+      font-family: 'Geist', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      color: rgba(255,255,255,0.92);
+      letter-spacing: 1px;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+      position: relative;
+      z-index: 1;
+    }
+
+    .sealed-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--brown-dark);
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+    .sealed-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+
+    .sealed-summary {
+      background: var(--parchment);
+      border: 1px solid var(--tan-light);
+      border-radius: 12px;
+      padding: 16px 20px;
+      text-align: left;
+      margin-bottom: 22px;
+    }
+    .sealed-summary-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--brown-muted);
+      margin-bottom: 10px;
+    }
+    .sealed-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text);
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(201,168,124,0.25);
+    }
+    .sealed-summary-item:last-child { border-bottom: none; }
+    .sealed-check { color: #5a9e6a; font-size: 13px; flex-shrink: 0; }
+
+    .sealed-next {
+      background: rgba(61,32,16,0.06);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin-bottom: 28px;
+      text-align: left;
+      border-left: 3px solid var(--tan);
+    }
+    .sealed-next strong { color: var(--brown-dark); }
+
+    .sealed-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sealed-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 24px;
+      border-radius: 10px;
+      font-family: 'Geist', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      text-decoration: none;
+    }
+    .sealed-btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+    .sealed-btn:active { transform: scale(0.97) translateY(1px); transition-duration: 0.07s; }
+    .sealed-btn-print {
+      background: var(--brown-dark);
+      color: var(--cream);
+      box-shadow: 0 4px 18px rgba(61,32,16,0.35);
+    }
+    .sealed-btn-email {
+      background: var(--parchment);
+      color: var(--brown-dark);
+      border: 1.5px solid var(--tan);
+      box-shadow: 0 2px 10px rgba(61,32,16,0.10);
+    }
+    .sealed-btn-close {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      padding: 8px;
+    }
+    .sealed-btn-close:hover { color: var(--brown-dark); transform: none; filter: none; }
+
+    /* ── Print ── */
+    @media print {
+      .toolbar, .val-overlay, .print-flash, #sealed-overlay { display: none !important; }
+      .sig-unsigned, .sig-accept-btn, .sig-clear-btn { display: none !important; }
+      .sig-locked-display {
+        border: 1px solid #C9A87C !important;
+        background: transparent !important;
+      }
+      .page-wrap { box-shadow: none; margin: 0; max-width: 100%; background: #fff; }
+      body { background: #fff; font-size: 11px; }
+      .fill-field {
+        border-bottom: 1px solid #999;
+        background: transparent;
+        color: #2E1B0E;
+        font-style: normal;
+      }
+      .fill-field::after { display: none; }
+      .fill-field::before { display: none; }
+      .fill-field.filled { border-bottom: 1px solid #3D2010; }
+      .page-break { page-break-after: always; border: none; margin: 24px 0; }
+      .ts-bar { background: none; border: none; color: #7A5C44; }
+      .note-box { border: 1px solid #C9A87C; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ TOOLBAR ══════════════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="brand" aria-label="Ian Kinoti — Client Document">
+    <span class="nav-letter" style="animation-delay:0s">I</span><span class="nav-letter" style="animation-delay:0.08s">A</span><span class="nav-letter" style="animation-delay:0.16s">N</span>
+    <span class="nav-sep">·</span>
+    <span class="nav-letter" style="animation-delay:0.24s">K</span><span class="nav-letter" style="animation-delay:0.32s">I</span><span class="nav-letter" style="animation-delay:0.40s">N</span><span class="nav-letter" style="animation-delay:0.48s">O</span><span class="nav-letter" style="animation-delay:0.56s">T</span><span class="nav-letter" style="animation-delay:0.64s">I</span>
+  </div>
+  <div class="actions">
+    <button class="btn btn-clear" onclick="clearAll()">↺ &nbsp;Clear All Fields</button>
+    <button class="btn btn-print" onclick="validateAndPrint()">🖨 &nbsp;Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- ══ TIMESTAMP BAR ════════════════════════════════════════════ -->
+  <div class="ts-bar">
+    <span>📄 &nbsp;<b>Document Issued:</b> &nbsp;<span id="issued-ts">—</span></span>
+    <span>👁 &nbsp;<b>Opened by client:</b> &nbsp;<span id="client-ts">detecting…</span></span>
+  </div>
+
+  <!-- ══ HEADER ═══════════════════════════════════════════════════ -->
+  <div class="doc-header">
+    <h1 aria-label="Ian Kinoti">
+      <span class="letter" style="animation-delay:0.00s">I</span><span class="letter" style="animation-delay:0.10s">A</span><span class="letter" style="animation-delay:0.20s">N</span><span class="letter-space"></span><span class="letter" style="animation-delay:0.30s">K</span><span class="letter" style="animation-delay:0.40s">I</span><span class="letter" style="animation-delay:0.50s">N</span><span class="letter" style="animation-delay:0.60s">O</span><span class="letter" style="animation-delay:0.70s">T</span><span class="letter" style="animation-delay:0.80s">I</span>
+    </h1>
+    <div class="subtitle">Creative Developer &nbsp;·&nbsp; Nairobi, Kenya</div>
+    <div class="contact">
+      <a href="mailto:kicoinkinoti@gmail.com">kicoinkinoti@gmail.com</a>
+      &nbsp;&nbsp;·&nbsp;&nbsp;
+      <a href="https://my-portfolio-ten-jet-99.vercel.app" target="_blank">my-portfolio-ten-jet-99.vercel.app</a>
+    </div>
+  </div>
+
+  <div class="doc-body">
+
+    <!-- ════════════════════════════════════════
+         SECTION 1 — WELCOME LETTER
+    ════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">01 &nbsp;|&nbsp; Welcome Letter</div>
+
+      <p class="meta-line">Date: <span id="letter-date"></span></p>
+      <br>
+      <p class="meta-line">To:</p>
+      <p><strong><span class="fill-field" data-label="Client Full Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong></p>
+      <p><span class="fill-field" data-label="Company / Business Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p>
+      <p class="meta-line">
+        <span class="fill-field" data-label="Client Email">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+        &nbsp;·&nbsp;
+        <span class="fill-field" data-label="Client Phone">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+      </p>
+
+      <br>
+
+      <p>Dear <strong><span class="fill-field" data-label="Client First Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong>,</p>
+
+      <br>
+
+      <p>
+        Thank you for choosing to work with me. I'm genuinely excited about what we're going to build together.
+        This document serves as your official welcome package. It outlines the scope of our engagement,
+        the investment required, and the terms that protect both of us throughout the project.
+      </p>
+
+      <p>
+        My commitment to you is simple: I will deliver a fast, modern, and polished digital product
+        that reflects your brand and serves your goals. Every decision, from architecture to animation,
+        will be made with intention and care.
+      </p>
+
+      <p>
+        Please read through this document carefully. If you have any questions before signing,
+        do not hesitate to reach out at <a href="mailto:kicoinkinoti@gmail.com" style="color:var(--brown);">kicoinkinoti@gmail.com</a>.
+      </p>
+
+      <br>
+      <p>Warm regards,</p>
+      <br>
+      <p><strong style="font-size:14px;">Ian Kinoti</strong></p>
+      <p style="color:var(--text-muted);font-size:11px;">Creative Developer &nbsp;·&nbsp; Ian Creative</p>
+      <p style="font-size:11px;"><a href="https://my-portfolio-ten-jet-99.vercel.app" style="color:#1a5fc0;">my-portfolio-ten-jet-99.vercel.app</a></p>
+    </div>
+
+    <hr class="page-break">
+
+    <!-- ════════════════════════════════════════
+         SECTION 2 — INVOICE
+    ════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">02 &nbsp;|&nbsp; Invoice</div>
+
+      <div class="inv-meta">
+        <span class="key">Invoice No.</span>
+        <span class="val">INV-<span class="fill-field" data-label="Invoice Number">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+
+        <span class="key">Invoice Date</span>
+        <span class="val" id="inv-date">—</span>
+
+        <span class="key">Due Date</span>
+        <span class="val"><span class="fill-field" data-label="Payment Due Date">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+
+        <span class="key">Project</span>
+        <span class="val"><span class="fill-field" data-label="Project Title / Website Type">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+      </div>
+
+      <div class="billing-grid">
+        <div class="billing-box">
+          <div class="blabel">Billed By</div>
+          <div class="bname">Ian Kinoti</div>
+          <div class="bdetail">Creative Developer &nbsp;·&nbsp; Nairobi, Kenya</div>
+          <div class="bemail">kicoinkinoti@gmail.com</div>
+        </div>
+        <div class="billing-box">
+          <div class="blabel">Billed To</div>
+          <div class="bname"><span class="fill-field" data-label="Client Full Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+          <div class="bdetail"><span class="fill-field" data-label="Company / Business Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+          <div class="bemail"><span class="fill-field" data-label="Client Email">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+        </div>
+      </div>
+
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th style="width:38px">#</th>
+            <th>Description of Service / Deliverable</th>
+            <th style="width:48px">Qty</th>
+            <th style="width:140px">Amount (KES)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><span class="fill-field" data-label="Service / Deliverable 1" style="min-width:320px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>1</td>
+            <td><span class="fill-field" data-label="Amount">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><span class="fill-field" data-label="Service / Deliverable 2" style="min-width:320px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>1</td>
+            <td><span class="fill-field" data-label="Amount">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><span class="fill-field" data-label="Service / Deliverable 3" style="min-width:320px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>1</td>
+            <td><span class="fill-field" data-label="Amount or 'Included'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><span class="fill-field" data-label="Service / Deliverable 4" style="min-width:320px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+            <td>1</td>
+            <td><span class="fill-field" data-label="Amount or 'Included'">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="total-row">
+          <span class="t-label">Subtotal</span>
+          <span class="t-val">KES &nbsp;<span class="fill-field" data-label="Subtotal">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+        </div>
+        <div class="total-row">
+          <span class="t-label">Deposit — 50% due before work starts</span>
+          <span class="t-val">KES &nbsp;<span class="fill-field" data-label="Deposit Amount">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+        </div>
+        <div class="total-row grand">
+          <span class="t-label">Balance Due on Delivery</span>
+          <span class="t-val">KES &nbsp;<span class="fill-field" data-label="Balance Amount">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></span>
+        </div>
+      </div>
+
+      <div class="note-box">
+        💳 &nbsp;Payment accepted via <strong>M-Pesa</strong> or <strong>Bank Transfer</strong>.
+        Payment details will be shared separately upon agreement.
+      </div>
+    </div>
+
+    <hr class="page-break">
+
+    <!-- ════════════════════════════════════════
+         SECTION 3 — CLIENT AGREEMENT
+    ════════════════════════════════════════ -->
+    <div class="section">
+      <div class="section-title">03 &nbsp;|&nbsp; Client Agreement</div>
+
+      <p style="margin-bottom:24px;">
+        This Agreement is entered into as of the date signed below, between <strong>Ian Kinoti</strong> ("Developer") and
+        <strong><span class="fill-field" data-label="Client Full Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong>
+        /
+        <strong><span class="fill-field" data-label="Company / Business Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></strong>
+        ("Client").
+      </p>
+
+      <div class="clause">
+        <div class="clause-title">1. Scope of Work</div>
+        <p>The Developer agrees to design and develop
+          <span class="fill-field" data-label="Project Title">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          as described in the agreed project brief. Any features, pages, or functionality not explicitly stated
+          in the brief are outside the scope of this agreement and will be quoted separately.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">2. Timeline</div>
+        <p>The estimated delivery timeline is
+          <span class="fill-field" data-label="Project Timeline (e.g. 3 weeks)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>.
+          This is contingent on the Client providing all required content, assets, and feedback within
+          <span class="fill-field" data-label="Feedback Turnaround Days (e.g. 2)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          business days of each request. Delays caused by the Client will extend the delivery date accordingly.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">3. Payment Terms</div>
+        <p>A non-refundable deposit of 50% of the total project fee is due before work commences.
+          The remaining balance is due upon project completion and before the final files or live deployment
+          are handed over. Failure to pay the balance within 7 days of delivery notice may result in
+          work being withheld.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">4. Revisions</div>
+        <p>This agreement includes
+          <span class="fill-field" data-label="Number of Revision Rounds">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          rounds of revisions. A revision is defined as minor adjustments to existing content or design,
+          not a change of direction or new feature requests. Additional revisions will be billed at
+          KES <span class="fill-field" data-label="Hourly Rate">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span> per hour.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">5. Intellectual Property</div>
+        <p>Upon receipt of full payment, the Client receives full ownership of the final deliverables.
+          The Developer retains the right to display the project in their portfolio and promotional
+          materials unless the Client requests otherwise in writing.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">6. Confidentiality</div>
+        <p>Both parties agree to keep all project-related information, business data, and proprietary
+          content confidential and not to disclose it to third parties without prior written consent.</p>
+      </div>
+
+      <div class="clause clause-liability">
+        <div class="clause-title">7. ⚠ Client Self-Maintenance &amp; Liability Disclaimer</div>
+        <p>The Developer delivers a fully tested, functional product at the time of handover.
+          <strong>Once the Client takes ownership of the codebase, hosting environment, or any aspect of
+          the website, the Developer is no longer liable for any crashes, data loss, security breaches,
+          broken functionality, or any damages, direct or indirect - arising from the Client's
+          modifications, third-party plugin updates, hosting issues, or any changes made without the
+          Developer's involvement.</strong></p>
+        <br>
+        <p>The Client acknowledges and accepts full responsibility for the website upon handover.
+          Any post-handover technical support, maintenance, updates, or repairs will require a separate
+          Maintenance Agreement and will be billed at the Developer's current rates.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">8. Hosting &amp; Domain</div>
+        <p>Unless explicitly included in the project scope, the Client is responsible for procuring
+          and maintaining their own hosting and domain. The Developer may assist with setup but is not
+          responsible for ongoing hosting performance, renewal, or downtime caused by the Client's
+          hosting provider.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">9. Termination</div>
+        <p>Either party may terminate this agreement with written notice. If the Client terminates
+          after work has commenced, the deposit is non-refundable and any work completed beyond the
+          deposit value will be invoiced and due immediately. If the Developer terminates, a pro-rata
+          refund of the deposit will be issued for work not yet performed.</p>
+      </div>
+
+      <div class="clause">
+        <div class="clause-title">10. Governing Law</div>
+        <p>This agreement shall be governed by the laws of Kenya. Any disputes shall first be
+          attempted to be resolved amicably. If unresolved, disputes shall be referred to the
+          relevant jurisdiction in Nairobi, Kenya.</p>
+      </div>
+
+      <!-- ── Signatures ── -->
+      <div class="sig-grid">
+        <div class="sig-box">
+          <div class="sig-name">Developer: Ian Kinoti</div>
+          <div class="sig-widget" id="sig-developer">
+            <div class="sig-locked-display">
+              <div class="sig-cursive">Ian Kinoti</div>
+              <div class="sig-seal"></div>
+              <div class="sig-meta">Signed electronically &nbsp;·&nbsp; <span class="sig-ts"></span></div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);">kicoinkinoti@gmail.com</div>
+        </div>
+        <div class="sig-box">
+          <div class="sig-name">Client: <span class="fill-field" data-label="Client Full Name">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+          <div class="sig-widget" id="sig-client">
+            <!-- unsigned -->
+            <div class="sig-unsigned">
+              <p class="sig-prompt">Type your full legal name to sign electronically</p>
+              <input type="text" class="sig-input" placeholder="Full legal name…" autocomplete="off" spellcheck="false">
+              <div class="sig-preview-wrap"><span class="sig-preview"></span></div>
+              <button class="sig-accept-btn" disabled>✍&nbsp; Accept &amp; Sign</button>
+            </div>
+            <!-- locked after signing -->
+            <div class="sig-locked-display" style="display:none">
+              <div class="sig-cursive"></div>
+              <div class="sig-seal"></div>
+              <div class="sig-meta">Signed electronically &nbsp;·&nbsp; <span class="sig-ts"></span></div>
+              <button class="sig-clear-btn">Clear signature</button>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:8px;"><span class="fill-field" data-label="Client Email">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></div>
+        </div>
+      </div>
+
+      <p style="text-align:center;font-size:10px;color:var(--brown-muted);margin-top:28px;">
+        By signing above, both parties confirm they have read, understood, and agreed to all terms in this document.
+      </p>
+    </div>
+
+  </div><!-- /doc-body -->
+
+  <div class="doc-footer">
+    Ian Kinoti &nbsp;·&nbsp; kicoinkinoti@gmail.com &nbsp;·&nbsp;
+    <a href="https://my-portfolio-ten-jet-99.vercel.app">my-portfolio-ten-jet-99.vercel.app</a>
+    &nbsp;·&nbsp; Kenya &nbsp;·&nbsp; © 2026
+  </div>
+
+</div><!-- /page-wrap -->
+
+<!-- ══ VALIDATION MODAL ══════════════════════════════════════ -->
+<div class="val-overlay" id="val-overlay" role="dialog" aria-modal="true">
+  <div class="val-modal">
+    <div class="val-modal-icon">📋</div>
+    <div class="val-modal-title">Document Not Complete</div>
+    <div class="val-modal-sub">Please fill every required field and sign before printing.<br>Click any item below to jump straight to it.</div>
+    <div id="val-modal-body"></div>
+    <div class="val-footer">
+      <button class="val-dismiss" onclick="closeModal()">Got it — I'll finish it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PRINT READY FLASH ══════════════════════════════════════ -->
+<div class="print-flash" id="print-flash">✓ &nbsp;Document complete — opening print dialog</div>
+
+<!-- ══ DOCUMENT SEALED OVERLAY ═══════════════════════════════ -->
+<div id="sealed-overlay" role="dialog" aria-modal="true">
+  <div class="sealed-card">
+    <div class="wax-seal"><span class="wax-seal-text">IK</span></div>
+    <div class="sealed-title">Document Sealed</div>
+    <div class="sealed-subtitle">You've completed and signed the Client Agreement<br>with <strong style="color:var(--brown-dark)">Ian Kinoti</strong>. Save your copy below.</div>
+
+    <div class="sealed-summary">
+      <div class="sealed-summary-title">What you signed</div>
+      <div class="sealed-summary-item"><span class="sealed-check">✓</span><span>Welcome Letter &amp; Project Overview</span></div>
+      <div class="sealed-summary-item"><span class="sealed-check">✓</span><span>Invoice (all line items &amp; payment terms)</span></div>
+      <div class="sealed-summary-item"><span class="sealed-check">✓</span><span>Client Agreement — 10 Clauses incl. IP &amp; Liability</span></div>
+      <div class="sealed-summary-item"><span class="sealed-check">✓</span><span>Electronic signature with timestamp</span></div>
+    </div>
+
+    <div class="sealed-next">
+      <strong>What happens next?</strong><br>
+      Ian will confirm receipt and reach out within <strong>24 hours</strong> to finalize your deposit and officially kick off the project.<br><br>
+      <span style="color:var(--brown-muted);font-size:12px;display:block;margin-top:6px;">
+        <b>Note:</b> After saving your PDF, you must <b>attach it manually</b> to the email before sending to Ian.
+      </span>
+      Keep your PDF copy for your records.
+    </div>
+
+    <div class="sealed-actions">
+      <button class="sealed-btn sealed-btn-print" id="sealed-print-btn">🖨&nbsp; Download / Print My PDF</button>
+      <a class="sealed-btn sealed-btn-email" id="sealed-email-btn" href="#">📧&nbsp; Send Signed Copy to Ian</a>
+      <button class="sealed-btn sealed-btn-close" onclick="closeSealedOverlay()">✕&nbsp; Close &amp; go back to document</button>
+    </div>
+  </div>
+</div>
+
+<script>
+    // ══ INVOICE AUTO-TOTALS & LOCALSTORAGE ═══════════════════════════════════
+
+    // Helper: parse KES value or 0
+    function parseKES(val) {
+      if (!val) return 0;
+      val = val.replace(/[^\d.]/g, '');
+      return parseFloat(val) || 0;
+    }
+
+    // Save/load all fill fields and signature to localStorage
+    function saveDocState() {
+      const data = {};
+      document.querySelectorAll('.fill-field').forEach(span => {
+        data[span.dataset.label] = span.dataset.value || '';
+      });
+      // Signature
+      const sig = document.getElementById('sig-client');
+      if (sig.dataset.signed === 'true') {
+        data._sigName = sig.querySelector('.sig-cursive').textContent;
+        data._sigTs   = sig.querySelector('.sig-ts').textContent;
+        data._sigSigned = 'true';
+      } else {
+        data._sigName = '';
+        data._sigTs = '';
+        data._sigSigned = '';
+      }
+      localStorage.setItem('ik_clientdoc', JSON.stringify(data));
+    }
+
+    function loadDocState() {
+      const data = JSON.parse(localStorage.getItem('ik_clientdoc') || '{}');
+      document.querySelectorAll('.fill-field').forEach(span => {
+        const val = data[span.dataset.label] || '';
+        span.dataset.value = val;
+        span.classList.toggle('filled', !!val);
+        span.textContent = val || BLANK;
+      });
+      // Signature
+      const sig = document.getElementById('sig-client');
+      if (data._sigSigned === 'true') {
+        sig.querySelector('.sig-cursive').textContent = data._sigName || '';
+        sig.querySelector('.sig-ts').textContent = data._sigTs || '';
+        sig.querySelector('.sig-unsigned').style.display = 'none';
+        sig.querySelector('.sig-locked-display').style.display = 'block';
+        sig.dataset.signed = 'true';
+      }
+    }
+
+    // Auto-totals for invoice
+    function updateInvoiceTotals() {
+      // Find all invoice amount fields (first 4 in invoice table)
+      const rows = document.querySelectorAll('.inv-table tbody tr');
+      let subtotal = 0;
+      rows.forEach(row => {
+        const amt = row.querySelector('.fill-field[data-label^="Amount"]');
+        if (amt && amt.dataset.value && !isNaN(parseKES(amt.dataset.value))) {
+          subtotal += parseKES(amt.dataset.value);
+        }
+      });
+      // Set subtotal
+      const subtotalField = document.querySelector('.fill-field[data-label="Subtotal"]');
+      if (subtotalField) {
+        subtotalField.dataset.value = subtotal ? subtotal.toLocaleString('en-KE') : '';
+        subtotalField.classList.toggle('filled', !!subtotal);
+        subtotalField.textContent = subtotal ? subtotal.toLocaleString('en-KE') : BLANK;
+      }
+      // Deposit = 50% of subtotal
+      const deposit = subtotal ? Math.round(subtotal * 0.5) : 0;
+      const depositField = document.querySelector('.fill-field[data-label="Deposit Amount"]');
+      if (depositField) {
+        depositField.dataset.value = deposit ? deposit.toLocaleString('en-KE') : '';
+        depositField.classList.toggle('filled', !!deposit);
+        depositField.textContent = deposit ? deposit.toLocaleString('en-KE') : BLANK;
+      }
+      // Balance = subtotal - deposit
+      const balance = subtotal - deposit;
+      const balanceField = document.querySelector('.fill-field[data-label="Balance Amount"]');
+      if (balanceField) {
+        balanceField.dataset.value = balance ? balance.toLocaleString('en-KE') : '';
+        balanceField.classList.toggle('filled', !!balance);
+        balanceField.textContent = balance ? balance.toLocaleString('en-KE') : BLANK;
+      }
+    }
+
+    // Listen for changes on invoice amount fields
+    function setupInvoiceAutoTotals() {
+      document.querySelectorAll('.inv-table .fill-field[data-label^="Amount"]').forEach(span => {
+        span.addEventListener('click', function () {
+          // Wait for input to be created
+          setTimeout(() => {
+            const input = document.querySelector('.fill-input');
+            if (input) {
+              input.addEventListener('input', function () {
+                updateInvoiceTotals();
+                saveDocState();
+              });
+              input.addEventListener('blur', function () {
+                updateInvoiceTotals();
+                saveDocState();
+              });
+            }
+          }, 10);
+        });
+      });
+    }
+
+    // Save on any fill-field change
+    function setupFieldPersistence() {
+      document.querySelectorAll('.fill-field').forEach(span => {
+        span.addEventListener('click', function () {
+          setTimeout(() => {
+            const input = document.querySelector('.fill-input');
+            if (input) {
+              input.addEventListener('input', saveDocState);
+              input.addEventListener('blur', saveDocState);
+            }
+          }, 10);
+        });
+      });
+      // Signature accept/clear
+      const sig = document.getElementById('sig-client');
+      sig.querySelector('.sig-accept-btn').addEventListener('click', saveDocState);
+      sig.querySelector('.sig-clear-btn').addEventListener('click', saveDocState);
+    }
+
+    // On load
+    window.addEventListener('DOMContentLoaded', function () {
+      loadDocState();
+      updateInvoiceTotals();
+      setupInvoiceAutoTotals();
+      setupFieldPersistence();
+    });
+
+    // Also update totals/save on Clear All
+    const origClearAll = clearAll;
+    clearAll = function () {
+      origClearAll();
+      updateInvoiceTotals();
+      saveDocState();
+    };
+
+  // ══ TIMESTAMPS ════════════════════════════════════════════════════════════
+
+  const now = new Date();
+
+  // Ian's timezone: EAT (Africa/Nairobi, UTC+3)
+  const eatFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Africa/Nairobi',
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: false
+  });
+  document.getElementById('issued-ts').textContent =
+    eatFmt.format(now) + ' EAT (UTC+3, Nairobi)';
+
+  // Letter date (long format, EAT)
+  document.getElementById('letter-date').textContent =
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric', month: 'long', day: 'numeric'
+    }).format(now);
+
+  // Invoice date
+  document.getElementById('inv-date').textContent =
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Africa/Nairobi',
+      year: 'numeric', month: 'long', day: 'numeric'
+    }).format(now);
+
+  // Client's local timezone (auto-detected from their browser)
+  const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const clientFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: clientTz,
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  });
+  // Calculate UTC offset string
+  const offsetMins  = -now.getTimezoneOffset();
+  const offsetSign  = offsetMins >= 0 ? '+' : '-';
+  const offsetH     = String(Math.floor(Math.abs(offsetMins) / 60)).padStart(2, '0');
+  const offsetM     = String(Math.abs(offsetMins) % 60).padStart(2, '0');
+  const utcLabel    = `UTC${offsetSign}${offsetH}:${offsetM}`;
+
+  document.getElementById('client-ts').textContent =
+    `${clientFmt.format(now)} (${utcLabel}, ${clientTz})`;
+
+  // ══ FILL FIELDS ═══════════════════════════════════════════════════════════
+
+  const BLANK = '\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0';
+
+  function attachListener(span) {
+    span.addEventListener('click', function handleClick() {
+      const label = this.dataset.label || 'Enter value';
+      const saved = this.dataset.value  || '';
+
+      const input = document.createElement('input');
+      input.type        = 'text';
+      input.className   = 'fill-input';
+      input.value       = saved;
+      input.placeholder = label;
+      input.style.width = Math.max(180, this.getBoundingClientRect().width + 48) + 'px';
+
+      this.replaceWith(input);
+      input.focus();
+      if (saved) input.select();
+
+      function save() {
+        const val     = input.value.trim();
+        const newSpan = document.createElement('span');
+        newSpan.className     = 'fill-field' + (val ? ' filled' : '');
+        newSpan.dataset.label = label;
+        newSpan.dataset.value = val;
+        newSpan.textContent   = val || BLANK;
+        input.replaceWith(newSpan);
+        attachListener(newSpan);
+        // If this is an invoice amount, update totals
+        if (label.startsWith('Amount')) {
+          updateInvoiceTotals();
+        }
+        saveDocState();
+      }
+
+      input.addEventListener('blur',    save);
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); save(); }
+        if (e.key === 'Escape') { input.value = saved; save(); }
+      });
+    });
+  }
+
+  document.querySelectorAll('.fill-field').forEach(attachListener);
+
+  // ══ TOOLBAR CAMOUFLAGE SCROLL ══════════════════════════════════════════
+
+  const toolbar = document.querySelector('.toolbar');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 10) {
+      toolbar.classList.add('scrolled');
+    } else {
+      toolbar.classList.remove('scrolled');
+    }
+  }, { passive: true });
+
+  // ══ MOUSE-TRAIL BUBBLES ══════════════════════════════════════════════════
+
+  (function () {
+    const header = document.querySelector('.doc-header');
+    if (!header) return;
+
+    // Warm palette options: [bg-color, border-color, opacity]
+    const PALETTE = [
+      ['rgba(228,211,187,0.55)', 'rgba(201,168,124,0.7)'],
+      ['rgba(201,168,124,0.45)', 'rgba(228,211,187,0.6)'],
+      ['rgba(242,237,228,0.50)', 'rgba(201,168,124,0.5)'],
+      ['rgba(156,122,91,0.35)',  'rgba(228,211,187,0.45)'],
+      ['rgba(255,255,255,0.20)', 'rgba(242,237,228,0.55)'],
+    ];
+
+    let last = 0;
+    const THROTTLE = 38; // ms between spawns
+
+    header.addEventListener('mousemove', function (e) {
+      const now = Date.now();
+      if (now - last < THROTTLE) return;
+      last = now;
+
+      const rect  = header.getBoundingClientRect();
+      const x     = e.clientX - rect.left;
+      const y     = e.clientY - rect.top;
+
+      const size  = 6 + Math.random() * 14;          // 6–20 px
+      const dur   = (0.8 + Math.random() * 0.7).toFixed(2); // 0.8–1.5s
+      const op    = (0.55 + Math.random() * 0.35).toFixed(2); // 0.55–0.9
+      const drift = (Math.random() - 0.5) * 28;     // ± 14px horizontal
+      const [bg, border] = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+
+      const b = document.createElement('span');
+      b.className = 'trail-bubble';
+      b.style.cssText = [
+        `left:${x - size / 2}px`,
+        `top:${y - size / 2}px`,
+        `width:${size}px`,
+        `height:${size}px`,
+        `background:${bg}`,
+        `border:1px solid ${border}`,
+        `box-shadow:0 0 ${size * 1.2}px ${bg}`,
+        `--bdur:${dur}s`,
+        `--bop:${op}`,
+        `transform-origin:center center`,
+        // random lateral drift via margin offset animation trick
+        `margin-left:${drift}px`,
+      ].join(';');
+
+      header.appendChild(b);
+      b.addEventListener('animationend', () => b.remove(), { once: true });
+    });
+  })();
+
+  // ══ SIGNATURES ═══════════════════════════════════════════════════════════
+
+  // ── Developer signature (pre-locked, timestamp on load) ───────────────
+  (function () {
+    const ts = document.querySelector('#sig-developer .sig-ts');
+    if (ts) ts.textContent = eatFmt.format(now) + ' EAT';
+  })();
+
+  // ── Client signature ─────────────────────────────────────────────────
+  const _sigWidget  = document.getElementById('sig-client');
+  const _sigUnsign  = _sigWidget.querySelector('.sig-unsigned');
+  const _sigLocked  = _sigWidget.querySelector('.sig-locked-display');
+  const _sigInput   = _sigWidget.querySelector('.sig-input');
+  const _sigPreview = _sigWidget.querySelector('.sig-preview');
+  const _sigAccept  = _sigWidget.querySelector('.sig-accept-btn');
+  const _sigClear   = _sigWidget.querySelector('.sig-clear-btn');
+
+  _sigInput.addEventListener('input', function () {
+    const val = this.value.trim();
+    _sigPreview.textContent = val;
+    _sigAccept.disabled = val.length < 2;
+  });
+
+  _sigAccept.addEventListener('click', function () {
+    const name = _sigInput.value.trim();
+    if (name.length < 2) return;
+
+    const tz  = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const fmt = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+    _sigLocked.querySelector('.sig-cursive').textContent = name;
+    _sigLocked.querySelector('.sig-ts').textContent      = fmt.format(new Date()) + ' (' + tz + ')';
+
+    _sigUnsign.style.display = 'none';
+    _sigLocked.style.display = 'block';
+    _sigWidget.dataset.signed = 'true';
+  });
+
+  _sigClear.addEventListener('click', function () {
+    if (!confirm('Clear your signature and start over?')) return;
+    _sigInput.value          = '';
+    _sigPreview.textContent  = '';
+    _sigAccept.disabled      = true;
+    _sigUnsign.style.display = 'block';
+    _sigLocked.style.display = 'none';
+    delete _sigWidget.dataset.signed;
+  });
+
+  // ══ VALIDATE & PRINT ═════════════════════════════════════════════════════
+
+  function validateAndPrint() {
+    const missing = [];
+
+    document.querySelectorAll('.fill-field').forEach(function (span) {
+      if (!span.dataset.value || !span.dataset.value.trim()) {
+        const section = span.closest('.section');
+        const title   = section
+          ? (section.querySelector('.section-title') || {}).textContent || ''
+          : 'Document';
+        missing.push({
+          label:   span.dataset.label || 'Field',
+          section: title.replace(/\s+/g, ' ').trim(),
+          el:      span
+        });
+      }
+    });
+
+    if (_sigWidget.dataset.signed !== 'true') {
+      missing.push({
+        label:   'Client Signature',
+        section: '03  |  Client Agreement',
+        el:      _sigWidget,
+        isSig:   true
+      });
+    }
+
+    if (!missing.length) {
+      showSealedOverlay();
+      return;
+    }
+
+    showValidationModal(missing);
+  }
+
+  // ══ VALIDATION MODAL ═════════════════════════════════════════════════════
+
+  function showValidationModal(missing) {
+    const overlay = document.getElementById('val-overlay');
+    const body    = document.getElementById('val-modal-body');
+    body.innerHTML = '';
+
+    // Group by section
+    const groups = {};
+    missing.forEach(function (item) {
+      (groups[item.section] = groups[item.section] || []).push(item);
+    });
+
+    Object.keys(groups).forEach(function (sec) {
+      const lbl = document.createElement('div');
+      lbl.className   = 'val-section-label';
+      lbl.textContent = sec;
+      body.appendChild(lbl);
+
+      groups[sec].forEach(function (item) {
+        const btn = document.createElement('button');
+        btn.className = 'val-item';
+        btn.innerHTML =
+          '<span class="val-item-icon">' + (item.isSig ? '✍' : '⚠') + '</span>' +
+          '<span class="val-item-label">' + item.label + '</span>' +
+          '<span class="val-item-arrow">→</span>';
+
+        btn.addEventListener('click', function () {
+          closeModal();
+          setTimeout(function () {
+            item.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            item.el.classList.add('field-highlight');
+            item.el.addEventListener('animationend', function () {
+              item.el.classList.remove('field-highlight');
+            }, { once: true });
+            if (!item.isSig) item.el.click();
+          }, 220);
+        });
+        body.appendChild(btn);
+      });
+    });
+
+    overlay.classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('val-overlay').classList.remove('open');
+  }
+
+  document.getElementById('val-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ══ SEALED OVERLAY ═══════════════════════════════════════════════════════
+
+  function showSealedOverlay() {
+    // Build mailto link with client's name pre-filled
+    const clientName = _sigLocked.querySelector('.sig-cursive').textContent.trim() || 'Client';
+    const subject    = encodeURIComponent('Signed Client Agreement — ' + clientName);
+    const body       = encodeURIComponent(
+      'Hi Ian,\n\n' +
+      'I have completed and signed the Client Agreement document.\n' +
+      'Please find my signed PDF attached.\n\n' +
+      'Name: ' + clientName + '\n' +
+      'Signed: ' + _sigLocked.querySelector('.sig-ts').textContent.trim() + '\n\n' +
+      'Looking forward to working together!'
+    );
+    document.getElementById('sealed-email-btn').href =
+      'mailto:kicoinkinoti@gmail.com?subject=' + subject + '&body=' + body;
+
+    document.getElementById('sealed-overlay').classList.add('open');
+  }
+
+  function closeSealedOverlay() {
+    document.getElementById('sealed-overlay').classList.remove('open');
+  }
+
+  document.getElementById('sealed-print-btn').addEventListener('click', function () {
+    closeSealedOverlay();
+    const flash = document.getElementById('print-flash');
+    flash.classList.add('show');
+    setTimeout(function () {
+      flash.classList.remove('show');
+      window.print();
+    }, 650);
+  });
+
+  document.getElementById('sealed-overlay').addEventListener('click', function (e) {
+    if (e.target === this) closeSealedOverlay();
+  });
+
+  // ══ CLEAR ALL ════════════════════════════════════════════════════════════
+
+  function clearAll() {
+    const filled = document.querySelectorAll('.fill-field.filled');
+    const signed = _sigWidget.dataset.signed === 'true';
+    if (!filled.length && !signed) return;
+
+    const count = filled.length + (signed ? 1 : 0);
+    if (!confirm('Clear all ' + count + ' filled field' + (count !== 1 ? 's' : '') + ' and signatures?')) return;
+
+    filled.forEach(function (span) {
+      span.classList.remove('filled');
+      span.dataset.value = '';
+      span.textContent   = BLANK;
+    });
+
+    if (signed) {
+      _sigInput.value          = '';
+      _sigPreview.textContent  = '';
+      _sigAccept.disabled      = true;
+      _sigUnsign.style.display = 'block';
+      _sigLocked.style.display = 'none';
+      delete _sigWidget.dataset.signed;
+    }
+  }
+</script>
+
+</body>
+</html>
